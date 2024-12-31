@@ -20,6 +20,7 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_decode
 from .models import Membership
 from .serializers import MembershipSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 # endregion
 
 
@@ -134,13 +135,19 @@ class SignInView(APIView):
 
         # Check if the provided password matches the hashed password
         if check_password(password, user.password):
-            return Response({"message": "Login successful"}, status=status.HTTP_200_OK)
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
+            return Response(
+                {
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                },
+                status=status.HTTP_200_OK,
+            )
 
         return Response(
             {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
         )
-
-
 # endregion
 
 

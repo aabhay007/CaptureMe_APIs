@@ -27,7 +27,7 @@ SECRET_KEY = "django-insecure-7h#t4%!6gp%0t@csba%2$neh2_t-!%5rug+$!)sx6--_zpwbun
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -85,6 +85,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "CapturePro.wsgi.application"
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
