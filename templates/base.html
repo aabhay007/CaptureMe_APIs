@@ -1,0 +1,62 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Eduport - LMS, Education and Course Theme</title>
+
+    <!-- Meta Tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="author" content="Webestica.com" />
+    <meta
+      name="description"
+      content="Eduport- LMS, Education and Course Theme"
+    />
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'images/favicon.ico' %}" />
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet"href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap"/>
+
+    <!-- Plugins CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'vendor/font-awesome/css/all.min.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'vendor/bootstrap-icons/bootstrap-icons.css' %}"/>
+
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    {% comment %} <link id="style-switch" rel="stylesheet" href="{% static 'css/style.css' %}"/> {% endcomment %}
+    
+  </head>
+
+  <body>
+    <!-- **************** MAIN CONTENT START **************** -->
+    <main>
+      <section
+        class="p-0 d-flex align-items-center position-relative overflow-hidden"
+      >
+        {%block body %} {%endblock body%}
+      </section>
+    </main>
+    <!-- **************** MAIN CONTENT END **************** -->
+
+    <!-- Back to top -->
+    <div class="back-top">
+      <i
+        class="bi bi-arrow-up-short position-absolute top-50 start-50 translate-middle"
+      ></i>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="{% static 'vendor/bootstrap/dist/js/bootstrap.bundle.min.js'%}"></script>
+
+    <!-- Template Functions -->
+    <script src="{% static 'js/functions.js'%}"></script>
+  </body>
+</html>
