@@ -21,6 +21,7 @@ from django.utils.http import urlsafe_base64_decode
 from .models import Membership
 from .serializers import MembershipSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
+import re
 # endregion
 
 
@@ -122,15 +123,30 @@ class SignUpView(APIView):
 
 class SignInView(APIView):
     def post(self, request):
-        username = request.data.get("username")
+        # Get credentials from the request
+        identifier = request.data.get("username")  # Accept either username or email
         password = request.data.get("password")
 
-        # Query the user by username
+        # Validate input
+        if not identifier or not password:
+            return Response(
+                {"error": "Both identifier and password are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check if the identifier is an email
+        is_email = re.match(r"[^@]+@[^@]+\.[^@]+", identifier)
+
+        # Query the user by email or username
         try:
-            user = User.objects.get(username=username)
+            if is_email:
+                user = User.objects.get(email=identifier)
+            else:
+                user = User.objects.get(username=identifier)
         except User.DoesNotExist:
             return Response(
-                {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
+                {"error": "Invalid credentials"},
+                status=status.HTTP_401_UNAUTHORIZED,
             )
 
         # Check if the provided password matches the hashed password
