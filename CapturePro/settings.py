@@ -98,13 +98,24 @@ REST_FRAMEWORK = {
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "CapturePro",  # database name
-        "USER": "postgres",  # PostgreSQL username
-        "PASSWORD": "Admin@123",  # PostgreSQL password
-        "HOST": "localhost",  # Server address
+        "NAME": "mydb01_t4ue",  # database name
+        "USER": "myuser",  # PostgreSQL username
+        "PASSWORD": "CJs16xcakU0FRe4GlOr1owtfYjrs3AYW",  # PostgreSQL password
+        "HOST": "dpg-ctptaj8gph6c73dhlcp0-a.singapore-postgres.render.com",  # Server address
         "PORT": "5432",  # Default PostgreSQL port
     }
 }
+# postgresql://myuser:CJs16xcakU0FRe4GlOr1owtfYjrs3AYW@dpg-ctptaj8gph6c73dhlcp0-a.singapore-postgres.render.com/mydb01_t4ue
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": "CapturePro",  # database name
+#         "USER": "postgres",  # PostgreSQL username
+#         "PASSWORD": "Admin@123",  # PostgreSQL password
+#         "HOST": "localhost",  # Server address
+#         "PORT": "5432",  # Default PostgreSQL port
+#     }
+# }
 
 
 # Password validation
