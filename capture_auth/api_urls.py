@@ -27,5 +27,7 @@ urlpatterns = [
     #endregion
     path('membership/', MembershipCreateView.as_view(), name='membership-create'),
     path('membership/<int:pk>/', MembershipDetailView.as_view(), name='membership-detail'),
+
+    path('recordings/', VideoRecordingView.as_view(), name='video-recordings'),
 ]
 #endregion

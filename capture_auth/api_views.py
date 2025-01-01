@@ -3,11 +3,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.utils.crypto import get_random_string
 from rest_framework import status, generics, permissions, filters
-from .models import User, CompanyProfile, EmployeeProfile
+from .models import User, CompanyProfile, EmployeeProfile, VideoRecording
 from .serializers import (
     UserSerializer,
     CompanyProfileSerializer,
     EmployeeProfileSerializer,
+    VideoRecordingSerializer
 )
 from django.contrib.auth.hashers import check_password
 from django.core.mail import send_mail
@@ -22,8 +23,52 @@ from .models import Membership
 from .serializers import MembershipSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 import re
+import requests
+from rest_framework.permissions import AllowAny
 # endregion
 
+BUNNY_STORAGE_ZONE = 'CaptureApp'
+BUNNY_API_KEY = '1ade0733-3a01-4e3e-a8918b231011-2270-4549'
+BUNNY_STORAGE_ENDPOINT = f'https://storage.bunnycdn.com/{BUNNY_STORAGE_ZONE}'
+
+class VideoRecordingView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        """Retrieve all recordings for the logged-in user."""
+        recordings = VideoRecording.objects.filter(user=request.user)
+        serializer = VideoRecordingSerializer(recordings, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        """Upload a video recording."""
+        title = request.data.get('title')
+        video_file = request.FILES.get('video')
+
+        if not title or not video_file:
+            return Response({"error": "Title and video file are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        file_name = video_file.name
+        headers = {'AccessKey': BUNNY_API_KEY}
+        upload_url = f"{BUNNY_STORAGE_ENDPOINT}/{file_name}"
+
+        # Upload to Bunny.net
+        response = requests.put(upload_url, headers=headers, files={'file': (file_name, video_file)})
+
+        if response.status_code == 201:
+            video_url = f"https://{BUNNY_STORAGE_ZONE}.b-cdn.net/{file_name}"
+
+            # Save video metadata in the database
+            recording = VideoRecording.objects.create(
+                user=request.user,
+                title=title,
+                file_name=file_name,
+                video_url=video_url
+            )
+            serializer = VideoRecordingSerializer(recording)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response({"error": "Failed to upload to Bunny.net"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # region add employee
 class SignUpWithRandomPasswordView(APIView):
@@ -120,7 +165,6 @@ class SignUpView(APIView):
             fail_silently=False,
         )
 
-
 class SignInView(APIView):
     def post(self, request):
         # Get credentials from the request
@@ -153,10 +197,16 @@ class SignInView(APIView):
         if check_password(password, user.password):
             # Generate JWT tokens
             refresh = RefreshToken.for_user(user)
+            
+            # Add custom claims to the token
+            access_token = refresh.access_token
+            access_token["role"] = user.role  # Assuming the `User` model has a `role` field
+
             return Response(
                 {
                     "refresh": str(refresh),
-                    "access": str(refresh.access_token),
+                    "access": str(access_token),
+                    "role": user.role,  # Explicitly include role in the response
                 },
                 status=status.HTTP_200_OK,
             )

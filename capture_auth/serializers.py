@@ -1,6 +1,6 @@
 #region imports
 from rest_framework import serializers
-from .models import User, CompanyProfile, EmployeeProfile, Membership
+from .models import User, CompanyProfile, EmployeeProfile, Membership, VideoRecording
 from django.contrib.auth.hashers import make_password
 #endregion
 
@@ -49,3 +49,8 @@ class EmployeeProfileSerializer(serializers.ModelSerializer):
 #endregion
 
 
+class VideoRecordingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VideoRecording
+        fields = ['id', 'user', 'title', 'file_name', 'uploaded_at', 'video_url']
+        read_only_fields = ['id', 'uploaded_at', 'video_url']
