@@ -24,21 +24,30 @@ from .serializers import MembershipSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 import re
 import requests
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
+import logging
+import uuid
 # endregion
 
-BUNNY_STORAGE_ZONE = 'CaptureApp'
+BUNNY_STORAGE_ZONE = 'capture-store'
 BUNNY_API_KEY = '1ade0733-3a01-4e3e-a8918b231011-2270-4549'
-BUNNY_STORAGE_ENDPOINT = f'https://storage.bunnycdn.com/{BUNNY_STORAGE_ZONE}'
+BUNNY_STORAGE_ENDPOINT = f'https://sg.storage.bunnycdn.com/{BUNNY_STORAGE_ZONE}'
+
+# Logger setup
+logger = logging.getLogger(__name__)
 
 class VideoRecordingView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]  # Only authenticated users can access this view
 
     def get(self, request):
         """Retrieve all recordings for the logged-in user."""
-        recordings = VideoRecording.objects.filter(user=request.user)
-        serializer = VideoRecordingSerializer(recordings, many=True)
-        return Response(serializer.data)
+        try:
+            recordings = VideoRecording.objects.filter(user=request.user)
+            serializer = VideoRecordingSerializer(recordings, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Error retrieving recordings: {str(e)}")
+            return Response({"error": "Failed to retrieve recordings."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def post(self, request):
         """Upload a video recording."""
@@ -48,28 +57,49 @@ class VideoRecordingView(APIView):
         if not title or not video_file:
             return Response({"error": "Title and video file are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        file_name = video_file.name
+        # Validate file size and format
+        if video_file.size > 1024 * 1024 * 100:  # 100 MB limit
+            return Response({"error": "File size exceeds the limit of 100 MB."}, status=status.HTTP_400_BAD_REQUEST)
+        if not video_file.name.endswith(('.webm', '.mp4', '.mkv')):
+            return Response({"error": "Unsupported file format. Use .webm, .mp4, or .mkv."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Generate a unique file name
+        original_file_name = video_file.name
+        unique_suffix = uuid.uuid4().hex[:8]  # Generate a random 8-character string
+        file_name = f"{unique_suffix}_{original_file_name}"
+
         headers = {'AccessKey': BUNNY_API_KEY}
         upload_url = f"{BUNNY_STORAGE_ENDPOINT}/{file_name}"
 
-        # Upload to Bunny.net
-        response = requests.put(upload_url, headers=headers, files={'file': (file_name, video_file)})
+        try:
+            # Log upload details
+            logger.info(f"Uploading to Bunny.net: {upload_url}, File: {file_name}")
 
-        if response.status_code == 201:
-            video_url = f"https://{BUNNY_STORAGE_ZONE}.b-cdn.net/{file_name}"
+            # Upload to Bunny.net
+            response = requests.put(upload_url, headers=headers, files={'file': (file_name, video_file)})
 
-            # Save video metadata in the database
-            recording = VideoRecording.objects.create(
-                user=request.user,
-                title=title,
-                file_name=file_name,
-                video_url=video_url
-            )
-            serializer = VideoRecordingSerializer(recording)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # Debug Bunny.net response
+            logger.info(f"Bunny.net Response: {response.status_code} {response.text}")
 
-        return Response({"error": "Failed to upload to Bunny.net"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            if response.status_code == 201:
+                video_url = f"https://{BUNNY_STORAGE_ZONE}.b-cdn.net/{file_name}"
 
+                # Save video metadata in the database
+                recording = VideoRecording.objects.create(
+                    user=request.user,
+                    title=title,
+                    file_name=file_name,
+                    video_url=video_url
+                )
+                serializer = VideoRecordingSerializer(recording)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                logger.error(f"Failed to upload to Bunny.net: {response.status_code} {response.text}")
+                return Response({"error": "Failed to upload to Bunny.net"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        except Exception as e:
+            logger.error(f"Unexpected error during upload: {str(e)}")
+            return Response({"error": "An unexpected error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 # region add employee
 class SignUpWithRandomPasswordView(APIView):
     def post(self, request):

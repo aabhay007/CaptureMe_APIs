@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     "corsheaders",
 ]
 
+AUTH_USER_MODEL='capture_auth.User'
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
